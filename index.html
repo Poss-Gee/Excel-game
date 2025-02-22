@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Game for My Love ❤️</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #1a202c;
+            color: white;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        .grid {
+            display: grid;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px; /* Limit maximum width for larger screens */
+        }
+        .card {
+            width: 100%;
+            aspect-ratio: 1; /* Ensure cards are square */
+            background-color: #4a5568;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            cursor: pointer;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.3s;
+        }
+        .hidden {
+            background-image: url('back.png');
+            background-color: #2d3748;
+        }
+        .revealed {
+            transform: rotateY(180deg);
+        }
+        .menu {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            background-color: #ffcc00;
+            color: #1a202c;
+        }
+        .timer {
+            margin-top: 10px;
+            font-size: 18px;
+            display: none;
+        }
+        .progress {
+            margin-top: 10px;
+            font-size: 18px;
+        }
+        .scores {
+            display: flex;
+            justify-content: space-around;
+            width: 100%;
+            margin-top: 20px;
+        }
+        .scores div {
+            font-size: 20px;
+        }
+        .confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 600px) {
+            .grid {
+                gap: 5px;
+            }
+            .card {
+                border-radius: 5px;
+            }
+            button {
+                font-size: 14px;
+                padding: 8px 12px;
+            }
+            .scores div {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Memory Game for My Love ❤️</h1>
+    <div class="menu" id="menu">
+        <button onclick="startGame('single')">Single Player</button>
+        <button onclick="startGame('multi')">Multiplayer</button>
+    </div>
+    <button id="pauseBtn" onclick="togglePause()" style="display:none;">Pause</button>
+    <button id="backBtn" onclick="location.reload()" style="display:none;">Back</button>
+    <button id="hintBtn" onclick="useHint()" style="display:none;">Hint (3)</button>
+    <button id="freezeBtn" onclick="useFreezeTime()" style="display:none;">Freeze Time (1)</button>
+    <button id="revealBtn" onclick="useRevealAll()" style="display:none;">Reveal All (1)</button>
+    <div class="timer" id="timer">Time: 0s</div>
+    <div class="scores" id="scores" style="display:none;">
+        <div>Player 1: <span id="player1Score">0</span></div>
+        <div>Player 2: <span id="player2Score">0</span></div>
+    </div>
+    <div class="progress" id="progress">Stars: ★★★</div>
+    <div class="grid" id="gameBoard"></div>
+    <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+    <audio id="backgroundMusic" src="romantic-music.mp3" loop></audio>
+    <audio id="correctSound" src="correct.mp3"></audio>
+    <audio id="wrongSound" src="wrong.mp3"></audio>
+    <audio id="winSound" src="win.mp3"></audio>
+    <script>
+        const allImages = ["Babe1.jpg", "babe2.jpg", "babe3.jpg", "babe4.jpg", "babe5.jpg", "babe6.jpg","babe7.jpg","babe8.jpg","babe9.jpg","babe10.jpg"];
+        let images = [];
+        let cards = [];
+        let selectedCards = [];
+        let matchedPairs = 0;
+        let timer;
+        let timeElapsed = 0;
+        let gamePaused = false;
+        let hintsLeft = 3;
+        let freezeTimeLeft = 1;
+        let revealAllLeft = 1;
+        let currentLevel = 1;
+        let gridRows = 4;
+        let gridCols = 3;
+        let isMultiplayer = false;
+        let currentPlayer = 1;
+        let player1Score = 0;
+        let player2Score = 0;
+
+        function startGame(mode) {
+            isMultiplayer = mode === 'multi';
+            document.getElementById("menu").style.display = "none";
+            document.getElementById("pauseBtn").style.display = "inline-block";
+            document.getElementById("backBtn").style.display = "inline-block";
+            document.getElementById("hintBtn").style.display = "inline-block";
+            document.getElementById("freezeBtn").style.display = "inline-block";
+            document.getElementById("revealBtn").style.display = "inline-block";
+            document.getElementById("timer").style.display = "block";
+            document.getElementById("progress").style.display = "block";
+            document.getElementById("scores").style.display = isMultiplayer ? "flex" : "none";
+
+            // Set grid size based on level
+            if (currentLevel === 1) {
+                gridRows = 4;
+                gridCols = 3;
+            } else if (currentLevel === 2) {
+                gridRows = 4;
+                gridCols = 4;
+            } else if (currentLevel === 3) {
+                gridRows = 5;
+                gridCols = 4;
+            }
+
+            document.getElementById("gameBoard").style.gridTemplateColumns = `repeat(${gridCols}, 1fr)`;
+
+            const totalCards = gridRows * gridCols;
+            images = allImages.slice(0, totalCards / 2);
+            cards = [...images, ...images];
+            cards.sort(() => Math.random() - 0.5);
+            document.getElementById("gameBoard").innerHTML = "";
+            cards.forEach((image, index) => createCard(image, index));
+            alert(`Level ${currentLevel}: You have 5 seconds to memorize the pictures!`);
+            revealCardsTemporarily();
+            timeElapsed = 0;
+            document.getElementById("timer").innerText = `Time: ${timeElapsed}s`;
+            hintsLeft = 3;
+            freezeTimeLeft = 1;
+            revealAllLeft = 1;
+            document.getElementById("hintBtn").innerText = `Hint (${hintsLeft})`;
+            document.getElementById("freezeBtn").innerText = `Freeze Time (${freezeTimeLeft})`;
+            document.getElementById("revealBtn").innerText = `Reveal All (${revealAllLeft})`;
+            document.getElementById("backgroundMusic").play();
+            currentPlayer = 1;
+            player1Score = 0;
+            player2Score = 0;
+            updateScores();
+        }
+
+        function createCard(image, index) {
+            const card = document.createElement("div");
+            card.classList.add("card", "hidden");
+            card.dataset.image = image;
+            card.dataset.index = index;
+            card.addEventListener("click", () => flipCard(card));
+            document.getElementById("gameBoard").appendChild(card);
+        }
+
+        function revealCardsTemporarily() {
+            document.querySelectorAll('.card').forEach(card => {
+                card.style.backgroundImage = `url(${card.dataset.image})`;
+            });
+            setTimeout(() => {
+                document.querySelectorAll('.card:not(.revealed)').forEach(card => {
+                    card.style.backgroundImage = "url('back.png')";
+                });
+                startTimer();
+            }, 5000);
+        }
+
+        function flipCard(card) {
+            if (card.classList.contains("revealed") || selectedCards.length === 2 || gamePaused) return;
+            card.style.backgroundImage = `url(${card.dataset.image})`;
+            selectedCards.push(card);
+            
+            if (selectedCards.length === 2) {
+                setTimeout(() => {
+                    const [card1, card2] = selectedCards;
+                    if (card1.dataset.image === card2.dataset.image) {
+                        card1.classList.add("revealed");
+                        card2.classList.add("revealed");
+                        matchedPairs++;
+                        if (isMultiplayer) {
+                            if (currentPlayer === 1) {
+                                player1Score++;
+                            } else {
+                                player2Score++;
+                            }
+                            updateScores();
+                        }
+                        document.getElementById("correctSound").play();
+                        showHearts();
+                    } else {
+                        card1.style.backgroundImage = "url('back.png')";
+                        card2.style.backgroundImage = "url('back.png')";
+                        document.getElementById("wrongSound").play();
+                        if (isMultiplayer) {
+                            currentPlayer = currentPlayer === 1 ? 2 : 1; // Switch turns
+                        }
+                    }
+                    selectedCards = [];
+
+                    if (matchedPairs === images.length) {
+                        clearInterval(timer);
+                        setTimeout(() => {
+                            document.getElementById("winSound").play();
+                            showConfetti();
+                            if (isMultiplayer) {
+                                const winner = player1Score > player2Score ? "Player 1" : player2Score > player1Score ? "Player 2" : "It's a tie!";
+                                alert(`Game Over! ${winner} wins! 🎉`);
+                            } else {
+                                if (currentLevel < 3) {
+                                    const choice = confirm(`Level ${currentLevel} completed! 🎉\nDo you want to move to the next level?`);
+                                    if (choice) {
+                                        currentLevel++;
+                                        startGame(isMultiplayer ? 'multi' : 'single');
+                                    } else {
+                                        startGame(isMultiplayer ? 'multi' : 'single'); // Restart current level
+                                    }
+                                } else {
+                                    alert("You've completed all levels! You're amazing! ❤️");
+                                    const choice = confirm("Do you want to play again?");
+                                    if (choice) {
+                                        currentLevel = 1;
+                                        startGame(isMultiplayer ? 'multi' : 'single');
+                                    }
+                                }
+                            }
+                        }, 500);
+                    }
+                }, 1000);
+            }
+        }
+
+        function updateScores() {
+            document.getElementById("player1Score").innerText = player1Score;
+            document.getElementById("player2Score").innerText = player2Score;
+        }
+
+        function startTimer() {
+            clearInterval(timer);
+            timer = setInterval(() => {
+                if (!gamePaused) {
+                    timeElapsed++;
+                    document.getElementById("timer").innerText = `Time: ${timeElapsed}s`;
+                }
+            }, 1000);
+        }
+
+        function togglePause() {
+            gamePaused = !gamePaused;
+            document.getElementById("pauseBtn").innerText = gamePaused ? "Resume" : "Pause";
+        }
+
+        function useHint() {
+            if (hintsLeft > 0) {
+                hintsLeft--;
+                document.getElementById("hintBtn").innerText = `Hint (${hintsLeft})`;
+                const unrevealedCards = Array.from(document.querySelectorAll('.card:not(.revealed)'));
+                const cardMap = new Map();
+                for (const card of unrevealedCards) {
+                    const image = card.dataset.image;
+                    if (cardMap.has(image)) {
+                        const firstCard = cardMap.get(image);
+                        const secondCard = card;
+                        firstCard.style.backgroundImage = `url(${image})`;
+                        secondCard.style.backgroundImage = `url(${image})`;
+                        setTimeout(() => {
+                            if (!firstCard.classList.contains("revealed")) {
+                                firstCard.style.backgroundImage = "url('back.png')";
+                            }
+                            if (!secondCard.classList.contains("revealed")) {
+                                secondCard.style.backgroundImage = "url('back.png')";
+                            }
+                        }, 1000);
+                        break;
+                    } else {
+                        cardMap.set(image, card);
+                    }
+                }
+            }
+        }
+
+        function useFreezeTime() {
+            if (freezeTimeLeft > 0) {
+                freezeTimeLeft--;
+                document.getElementById("freezeBtn").innerText = `Freeze Time (${freezeTimeLeft})`;
+                gamePaused = true;
+                setTimeout(() => {
+                    gamePaused = false;
+                }, 5000); // Freeze time for 5 seconds
+            }
+        }
+
+        function useRevealAll() {
+            if (revealAllLeft > 0) {
+                revealAllLeft--;
+                document.getElementById("revealBtn").innerText = `Reveal All (${revealAllLeft})`;
+                document.querySelectorAll('.card:not(.revealed)').forEach(card => {
+                    card.style.backgroundImage = `url(${card.dataset.image})`;
+                });
+                setTimeout(() => {
+                    document.querySelectorAll('.card:not(.revealed)').forEach(card => {
+                        card.style.backgroundImage = "url('back.png')";
+                    });
+                }, 2000); // Reveal all for 2 seconds
+            }
+        }
+
+        function showConfetti() {
+            const confettiSettings = { target: 'confetti-canvas', max: 150 };
+            const confetti = new ConfettiGenerator(confettiSettings);
+            confetti.render();
+            setTimeout(() => confetti.clear(), 5000); // Stop after 5 seconds
+        }
+
+        function showHearts() {
+            const heart = document.createElement("div");
+            heart.innerText = "❤️";
+            heart.style.position = "absolute";
+            heart.style.fontSize = "30px";
+            heart.style.left = `${Math.random() * 100}vw`;
+            heart.style.top = `${Math.random() * 100}vh`;
+            document.body.appendChild(heart);
+            setTimeout(() => heart.remove(), 1000);
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.4.0/dist/confetti.browser.min.js"></script>
+</body>
+</html>
