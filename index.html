@@ -23,11 +23,11 @@
             gap: 10px;
             margin-top: 20px;
             width: 100%;
-            max-width: 600px; /* Limit maximum width for larger screens */
+            max-width: 450px;
         }
         .card {
             width: 100%;
-            aspect-ratio: 1; /* Ensure cards are square */
+            aspect-ratio: 1;
             background-color: #4a5568;
             display: flex;
             align-items: center;
@@ -39,7 +39,7 @@
             transition: transform 0.3s;
         }
         .hidden {
-            background-image: url('back.png');
+            background-image: url('back.jpg');
             background-color: #2d3748;
         }
         .revealed {
@@ -56,13 +56,19 @@
             cursor: pointer;
             border-radius: 5px;
             border: none;
-            background-color: #ffcc00;
+            background-color: #daff0a;
             color: #1a202c;
         }
         .timer {
             margin-top: 10px;
             font-size: 18px;
             display: none;
+        }
+        .timer.blink {
+            animation: blink 1s infinite;
+        }
+        @keyframes blink {
+            50% { color: red; }
         }
         .progress {
             margin-top: 10px;
@@ -83,14 +89,62 @@
             left: 0;
             pointer-events: none;
         }
-
-        /* Responsive adjustments */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background-color: #2d3748;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            color: white;
+            width: 80%;
+            max-width: 400px;
+        }
+        .modal-buttons button {
+            margin: 10px;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 25px;
+            background-color: #ffcc00;
+            color: #1a202c;
+            transition: transform 0.2s;
+        }
+        .modal-buttons button:hover {
+            transform: scale(1.05);
+        }
+        .coin-shop {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #4a5568;
+            border-radius: 10px;
+        }
+        #gameOverModal .modal-content {
+            background-color: #e53e3e; /* Red background for game over */
+        }
+        #gameOverModal h2 {
+            color: white;
+        }
         @media (max-width: 600px) {
             .grid {
                 gap: 5px;
+                max-width: 90%; /* Reduce max-width for smaller screens */
             }
             .card {
                 border-radius: 5px;
+                min-width: 60px; /* Minimum card size */
+                min-height: 60px;
             }
             button {
                 font-size: 14px;
@@ -99,11 +153,43 @@
             .scores div {
                 font-size: 16px;
             }
+            .modal-content {
+                width: 90%; /* Make modal wider on small screens */
+                padding: 20px; /* Reduce padding */
+            }
+            .modal-buttons button {
+                padding: 10px 20px; /* Adjust button padding */
+                font-size: 14px;
+            }
+            h1 {
+                font-size: 24px; /* Reduce heading size */
+            }
+            .progress {
+                font-size: 16px; /* Reduce progress text size */
+            }
+            .timer {
+                font-size: 16px; /* Reduce timer text size */
+            }
+        }
+
+        @media (max-width: 400px) {
+            .card {
+                min-width: 50px; /* Further reduce card size for very small screens */
+                min-height: 50px;
+            }
+            .modal-content {
+                width: 95%; /* Make modal even wider */
+                padding: 15px; /* Further reduce padding */
+            }
+            .modal-buttons button {
+                padding: 8px 16px; /* Further adjust button padding */
+                font-size: 12px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>I love you Excel❤️</h1>
+    <h1>Memory Game for My Love ❤️</h1>
     <div class="menu" id="menu">
         <button onclick="startGame('single')">Single Player</button>
         <button onclick="startGame('multi')">Multiplayer</button>
@@ -111,22 +197,55 @@
     <button id="pauseBtn" onclick="togglePause()" style="display:none;">Pause</button>
     <button id="backBtn" onclick="location.reload()" style="display:none;">Back</button>
     <button id="hintBtn" onclick="useHint()" style="display:none;">Hint (3)</button>
-    <button id="freezeBtn" onclick="useFreezeTime()" style="display:none;">Freeze Time (1)</button>
     <button id="revealBtn" onclick="useRevealAll()" style="display:none;">Reveal All (1)</button>
     <div class="timer" id="timer">Time: 0s</div>
     <div class="scores" id="scores" style="display:none;">
         <div>Player 1: <span id="player1Score">0</span></div>
         <div>Player 2: <span id="player2Score">0</span></div>
     </div>
-    <div class="progress" id="progress">Stars: ★★★</div>
+    <div class="progress" id="progress">Stars: ★★★ | Coins: 0💰</div>
     <div class="grid" id="gameBoard"></div>
     <canvas id="confetti-canvas" class="confetti-canvas"></canvas>
+
+    <!-- Game Over Modal -->
+    <div id="gameOverModal" class="modal">
+        <div class="modal-content">
+            <h2>Game Over! 😢</h2>
+            <p>You ran out of time!</p>
+            <div class="modal-buttons">
+                <button id="playAgainBtn">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Level Complete Modal -->
+    <div id="levelCompleteModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Level Complete! 🎉</h2>
+            <div id="modalMessage">
+                <div style="font-size: 24px; margin: 15px 0;">
+                    <span id="modalStars"></span>
+                    <span id="modalCoins"></span>
+                </div>
+                <div class="coin-shop">
+                    <h3>Coin Shop 💰</h3>
+                    <p>Total Coins: <span id="totalCoinsDisplay">0</span></p>
+                    <button onclick="buyHint()">Buy Hint (30 coins)</button>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button id="nextLevelBtn">Next Level</button>
+                <button id="playAgainBtn2">Play Again</button>
+            </div>
+        </div>
+    </div>
+
     <audio id="backgroundMusic" src="romantic-music.mp3" loop></audio>
     <audio id="correctSound" src="correct.mp3"></audio>
     <audio id="wrongSound" src="wrong.mp3"></audio>
     <audio id="winSound" src="win.mp3"></audio>
     <script>
-        const allImages = ["Babe1.jpg", "babe2.jpg", "babe3.jpg", "babe4.jpg", "babe5.jpg", "babe6.jpg","babe7.jpg","babe8.jpg","babe9.jpg","babe10.jpg"];
+        const allImages = ["Babe1.jpg", "babe2.jpg","babe4.jpg", "babe5.jpg","babe7.jpg","babe8.jpg","babe9.jpg","babe10.jpg"];
         let images = [];
         let cards = [];
         let selectedCards = [];
@@ -135,7 +254,6 @@
         let timeElapsed = 0;
         let gamePaused = false;
         let hintsLeft = 3;
-        let freezeTimeLeft = 1;
         let revealAllLeft = 1;
         let currentLevel = 1;
         let gridRows = 4;
@@ -144,6 +262,51 @@
         let currentPlayer = 1;
         let player1Score = 0;
         let player2Score = 0;
+        let totalCoins = 0;
+        let currentLevelCoins = 0;
+
+        // Maximum time limits for each level
+        const maxTimeLimits = {
+            1: 65, // Level 1: 65 seconds
+            2: 75, // Level 2: 75 seconds
+            3: 85, // Level 3: 85 seconds
+        };
+
+        // Modal elements
+        const gameOverModal = document.getElementById("gameOverModal");
+        const levelCompleteModal = document.getElementById("levelCompleteModal");
+        const modalTitle = document.getElementById("modalTitle");
+        const modalMessage = document.getElementById("modalMessage");
+        const modalStars = document.getElementById("modalStars");
+        const modalCoins = document.getElementById("modalCoins");
+        const totalCoinsDisplay = document.getElementById("totalCoinsDisplay");
+        const nextLevelBtn = document.getElementById("nextLevelBtn");
+        const playAgainBtn = document.getElementById("playAgainBtn");
+        const playAgainBtn2 = document.getElementById("playAgainBtn2");
+
+        // Event listeners for modal buttons
+        playAgainBtn.addEventListener("click", () => {
+            gameOverModal.style.display = "none";
+            currentLevel = 1;
+            startGame(isMultiplayer ? 'multi' : 'single');
+        });
+
+        playAgainBtn2.addEventListener("click", () => {
+            levelCompleteModal.style.display = "none";
+            currentLevel = 1;
+            startGame(isMultiplayer ? 'multi' : 'single');
+        });
+
+        nextLevelBtn.addEventListener("click", () => {
+            levelCompleteModal.style.display = "none";
+            if (currentLevel < 3) {
+                currentLevel++;
+                startGame(isMultiplayer ? 'multi' : 'single');
+            } else {
+                currentLevel = 1;
+                startGame(isMultiplayer ? 'multi' : 'single');
+            }
+        });
 
         function startGame(mode) {
             isMultiplayer = mode === 'multi';
@@ -151,7 +314,6 @@
             document.getElementById("pauseBtn").style.display = "inline-block";
             document.getElementById("backBtn").style.display = "inline-block";
             document.getElementById("hintBtn").style.display = "inline-block";
-            document.getElementById("freezeBtn").style.display = "inline-block";
             document.getElementById("revealBtn").style.display = "inline-block";
             document.getElementById("timer").style.display = "block";
             document.getElementById("progress").style.display = "block";
@@ -182,10 +344,8 @@
             timeElapsed = 0;
             document.getElementById("timer").innerText = `Time: ${timeElapsed}s`;
             hintsLeft = 3;
-            freezeTimeLeft = 1;
             revealAllLeft = 1;
             document.getElementById("hintBtn").innerText = `Hint (${hintsLeft})`;
-            document.getElementById("freezeBtn").innerText = `Freeze Time (${freezeTimeLeft})`;
             document.getElementById("revealBtn").innerText = `Reveal All (${revealAllLeft})`;
             document.getElementById("backgroundMusic").play();
             currentPlayer = 1;
@@ -209,7 +369,7 @@
             });
             setTimeout(() => {
                 document.querySelectorAll('.card:not(.revealed)').forEach(card => {
-                    card.style.backgroundImage = "url('back.png')";
+                    card.style.backgroundImage = "url('back.jpg')";
                 });
                 startTimer();
             }, 5000);
@@ -238,8 +398,8 @@
                         document.getElementById("correctSound").play();
                         showHearts();
                     } else {
-                        card1.style.backgroundImage = "url('back.png')";
-                        card2.style.backgroundImage = "url('back.png')";
+                        card1.style.backgroundImage = "url('back.jpg')";
+                        card2.style.backgroundImage = "url('back.jpg')";
                         document.getElementById("wrongSound").play();
                         if (isMultiplayer) {
                             currentPlayer = currentPlayer === 1 ? 2 : 1; // Switch turns
@@ -248,40 +408,42 @@
                     selectedCards = [];
 
                     if (matchedPairs === images.length) {
-                        clearInterval(timer);
-                        setTimeout(() => {
-                            document.getElementById("winSound").play();
-                            showConfetti();
-                            if (isMultiplayer) {
-                                const winner = player1Score > player2Score ? "Player 1" : player2Score > player1Score ? "Player 2" : "It's a tie!";
-                                alert(`Game Over! ${winner} wins! 🎉`);
-                            } else {
-                                if (currentLevel < 3) {
-                                    const choice = confirm(`Level ${currentLevel} completed! 🎉\nDo you want to move to the next level?`);
-                                    if (choice) {
-                                        currentLevel++;
-                                        startGame(isMultiplayer ? 'multi' : 'single');
-                                    } else {
-                                        startGame(isMultiplayer ? 'multi' : 'single'); // Restart current level
-                                    }
-                                } else {
-                                    alert("You've completed all levels! You're amazing! ❤️");
-                                    const choice = confirm("Do you want to play again?");
-                                    if (choice) {
-                                        currentLevel = 1;
-                                        startGame(isMultiplayer ? 'multi' : 'single');
-                                    }
-                                }
-                            }
-                        }, 500);
+                        handleLevelCompletion();
                     }
                 }, 1000);
             }
         }
 
-        function updateScores() {
-            document.getElementById("player1Score").innerText = player1Score;
-            document.getElementById("player2Score").innerText = player2Score;
+        function handleLevelCompletion() {
+            clearInterval(timer);
+            setTimeout(() => {
+                document.getElementById("winSound").play();
+                showConfetti();
+                
+                const stars = calculateStars();
+                currentLevelCoins = calculateCoins();
+                totalCoins += currentLevelCoins;
+
+                // Update modal display
+                modalTitle.innerText = `Level ${currentLevel} Completed! 🎉`;
+                modalStars.innerHTML = `${stars}<br>`;
+                modalCoins.innerHTML = `Coins Earned: ${currentLevelCoins}💰`;
+                totalCoinsDisplay.innerText = totalCoins;
+                levelCompleteModal.style.display = "flex";
+
+                // Update progress display
+                document.getElementById("progress").innerHTML = `
+                    Hints: ${hintsLeft} 
+                    | Coins: ${totalCoins}💰
+                `;
+            }, 500);
+        }
+
+        function checkTimeLimit() {
+            if (timeElapsed >= maxTimeLimits[currentLevel]) {
+                clearInterval(timer);
+                gameOverModal.style.display = "flex"; // Show Game Over modal
+            }
         }
 
         function startTimer() {
@@ -290,8 +452,52 @@
                 if (!gamePaused) {
                     timeElapsed++;
                     document.getElementById("timer").innerText = `Time: ${timeElapsed}s`;
+
+                    // Make timer blink red when time is running out
+                    let blinkTime;
+                    if (currentLevel === 1) {
+                        blinkTime = 60;
+                    } else if (currentLevel === 2) {
+                        blinkTime = 70;
+                    } else if (currentLevel === 3) {
+                        blinkTime = 80;
+                    }
+
+                    if (timeElapsed > blinkTime) {
+                        document.getElementById("timer").classList.add("blink");
+                    }
+
+                    // Check if time is up
+                    checkTimeLimit();
                 }
             }, 1000);
+        }
+
+        function calculateStars() {
+            let maxTime = maxTimeLimits[currentLevel];
+            if (timeElapsed <= maxTime - 25) {
+                return "★★★";
+            } else if (timeElapsed <= maxTime - 15) {
+                return "★★";
+            } else {
+                return "★";
+            }
+        }
+
+        function calculateCoins() {
+            let maxTime = maxTimeLimits[currentLevel];
+            if (timeElapsed <= maxTime - 25) {
+                return 50;
+            } else if (timeElapsed <= maxTime - 15) {
+                return 40;
+            } else {
+                return 30;
+            }
+        }
+
+        function updateScores() {
+            document.getElementById("player1Score").innerText = player1Score;
+            document.getElementById("player2Score").innerText = player2Score;
         }
 
         function togglePause() {
@@ -314,10 +520,10 @@
                         secondCard.style.backgroundImage = `url(${image})`;
                         setTimeout(() => {
                             if (!firstCard.classList.contains("revealed")) {
-                                firstCard.style.backgroundImage = "url('back.png')";
+                                firstCard.style.backgroundImage = "url('back.jpg')";
                             }
                             if (!secondCard.classList.contains("revealed")) {
-                                secondCard.style.backgroundImage = "url('back.png')";
+                                secondCard.style.backgroundImage = "url('back.jpg')";
                             }
                         }, 1000);
                         break;
@@ -328,14 +534,18 @@
             }
         }
 
-        function useFreezeTime() {
-            if (freezeTimeLeft > 0) {
-                freezeTimeLeft--;
-                document.getElementById("freezeBtn").innerText = `Freeze Time (${freezeTimeLeft})`;
-                gamePaused = true;
-                setTimeout(() => {
-                    gamePaused = false;
-                }, 5000); // Freeze time for 5 seconds
+        function buyHint() {
+            if (totalCoins >= 30) {
+                totalCoins -= 30;
+                hintsLeft += 1;
+                totalCoinsDisplay.innerText = totalCoins;
+                document.getElementById("hintBtn").innerText = `Hint (${hintsLeft})`;
+                document.getElementById("progress").innerHTML = `
+                    Hints: ${hintsLeft} 
+                    | Coins: ${totalCoins}💰
+                `;
+            } else {
+                alert("Not enough coins! Earn more by completing levels faster!");
             }
         }
 
@@ -348,7 +558,7 @@
                 });
                 setTimeout(() => {
                     document.querySelectorAll('.card:not(.revealed)').forEach(card => {
-                        card.style.backgroundImage = "url('back.png')";
+                        card.style.backgroundImage = "url('back.jpg')";
                     });
                 }, 2000); // Reveal all for 2 seconds
             }
