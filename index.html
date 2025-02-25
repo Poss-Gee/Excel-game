@@ -188,6 +188,42 @@
                 opacity: 0;
             }
         }
+        .final-message {
+            display: none;
+            padding: 20px;
+            margin-top: 20px;
+            border-radius: 15px;
+            background-color: #4a5568;
+            text-align: center;
+            animation: glow 2s infinite alternate;
+        }
+        @keyframes glow {
+            from {
+                box-shadow: 0 0 10px #ff69b4;
+            }
+            to {
+                box-shadow: 0 0 20px #ff69b4, 0 0 30px #ff1493;
+            }
+        }
+        .name-input {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .name-input input {
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+        }
+        .love-message {
+            font-size: 18px;
+            line-height: 1.6;
+            color: #ffb6c1;
+            margin-top: 20px;
+            display: none;
+        }
 
         @media (max-width: 600px) {
             .grid {
@@ -218,13 +254,14 @@
         <button id="backBtn" onclick="location.reload()">Back</button>
         <button id="hintBtn" onclick="useHint()">Hint (3)</button>
         <button id="revealBtn" onclick="useRevealAll()">Reveal All (1)</button>
+        <button id="buyHintInGameBtn" onclick="buyHintInGame()">Buy Hint (30 coins)</button>
     </div>
     <div class="timer" id="timer">Time: 0s</div>
     <div class="scores" id="scores" style="display:none;">
         <div id="player1Container">Player 1: <span id="player1Score">0</span></div>
         <div id="player2Container">Player 2: <span id="player2Score">0</span></div>
     </div>
-    <div class="progress" id="progress">Stars: ★★★ | Coins: 0💰</div>
+    <div class="progress" id="progress">Stars: ★★★ | Coins: 30💰</div>
     <div class="grid" id="gameBoard"></div>
     <div class="hearts-container" id="heartsContainer"></div>
 
@@ -233,7 +270,8 @@
             <h2>Game Over! 😢</h2>
             <p>You ran out of time!</p>
             <div class="modal-buttons">
-                <button onclick="location.reload()">Play Again</button>
+                <button onclick="restartCurrentLevel()">Continue from Level <span id="currentLevelDisplay">1</span></button>
+                <button onclick="resetProgress(); location.reload();">Start from Beginning</button>
             </div>
         </div>
     </div>
@@ -246,13 +284,28 @@
                 <div id="modalCoins"></div>
                 <div class="coin-shop">
                     <h3>Coin Shop 💰</h3>
-                    <p>Total Coins: <span id="totalCoinsDisplay">0</span></p>
+                    <p>Total Coins: <span id="totalCoinsDisplay">30</span></p>
                     <button onclick="buyHint()">Buy Hint (30 coins)</button>
                 </div>
             </div>
             <div class="modal-buttons">
                 <button id="nextLevelBtn">Next Level</button>
-                <button id="playAgainBtn2" onclick="location.reload()">Play Again</button>
+                <button id="playAgainBtn2" onclick="resetProgress(); location.reload();">Play Again</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="finalLevelModal" class="modal">
+        <div class="modal-content">
+            <h2>Amazing! You Completed All Levels! 🎉🎉🎉</h2>
+            <p>Enter your boyfriend's name to see a special message:</p>
+            <div class="name-input">
+                <input type="text" id="boyfriendName" placeholder="Type his name...">
+                <button onclick="checkName()">Submit</button>
+            </div>
+            <div id="loveMessage" class="love-message"></div>
+            <div class="modal-buttons">
+                <button onclick="location.reload()">Play Again</button>
             </div>
         </div>
     </div>
@@ -268,7 +321,7 @@
     <script>
         const allImages = ["Babe1.jpg", "babe2.jpg", "babe4.jpg", "babe5.jpg", "babe7.jpg", "babe8.jpg", 
                           "babe9.jpg", "babe10.jpg", "babe11.jpg", "babe12.jpg", "babe13.jpg", "babe14.jpg",
-                          "babe15.jpg", "babe16.jpg", "babe17.jpg", "babe3.jpg", "babe6.jpg"]; // Removed duplicate babe17.jpg
+                          "babe15.jpg", "babe16.jpg", "babe17.jpg", "babe3.jpg", "babe6.jpg"]; 
         let images = [];
         let cards = [];
         let selectedCards = [];
@@ -285,7 +338,29 @@
         let currentPlayer = 1;
         let player1Score = 0;
         let player2Score = 0;
-        let totalCoins = 0;
+        let totalCoins = 30; // Starting with 30 coins
+        let currentGameMode = 'single'; // Track the current game mode
+
+        // Check for saved game state in local storage when page loads
+        window.onload = function() {
+            const savedLevel = localStorage.getItem('currentLevel');
+            if (savedLevel) {
+                currentLevel = parseInt(savedLevel);
+            }
+            
+            const savedCoins = localStorage.getItem('totalCoins');
+            if (savedCoins) {
+                totalCoins = parseInt(savedCoins);
+            }
+            
+            const savedHints = localStorage.getItem('hintsLeft');
+            if (savedHints) {
+                hintsLeft = parseInt(savedHints);
+            }
+            
+            // Update the progress display with saved values
+            updateProgress();
+        };
 
         const maxTimeLimits = {
             1: 65,
@@ -303,6 +378,7 @@
         const backgroundMusic = document.getElementById("backgroundMusic");
 
         function startGame(mode) {
+            currentGameMode = mode;
             isMultiplayer = mode === 'multi';
             document.getElementById("menu").style.display = "none";
             document.getElementById("gameControls").style.display = "flex";
@@ -318,30 +394,54 @@
             
             alert(`Level ${currentLevel}: You have 5 seconds to memorize the pictures!`);
             revealCardsTemporarily();
+            
+            // Update Buy Hint button status
+            updateBuyHintButtonStatus();
+            
+            // Save current game state to local storage
+            saveGameState();
+        }
+
+        function saveGameState() {
+            localStorage.setItem('currentLevel', currentLevel);
+            localStorage.setItem('totalCoins', totalCoins);
+            localStorage.setItem('hintsLeft', hintsLeft);
+            localStorage.setItem('gameMode', currentGameMode);
+        }
+
+        function resetProgress() {
+            localStorage.removeItem('currentLevel');
+            localStorage.removeItem('totalCoins');
+            localStorage.removeItem('hintsLeft');
+            localStorage.removeItem('gameMode');
+            currentLevel = 1;
+            totalCoins = 30;
+            hintsLeft = 3;
+            updateProgress();
         }
 
         function updateGridSize() {
-            // Set grid size based on current level
+            // Set grid size based on current level, using the new dimensions
             switch(currentLevel) {
                 case 1:
-                    gridRows = 3;
-                    gridCols = 2;
-                    break;
-                case 2:
                     gridRows = 4;
                     gridCols = 3;
                     break;
-                case 3:
+                case 2:
                     gridRows = 4;
+                    gridCols = 4;
+                    break;
+                case 3:
+                    gridRows = 5;
                     gridCols = 4;
                     break;
                 case 4:
                     gridRows = 5;
-                    gridCols = 4;
+                    gridCols = 5;
                     break;
                 case 5:
                     gridRows = 6;
-                    gridCols = 4;
+                    gridCols = 5;
                     break;
             }
             
@@ -516,29 +616,71 @@
             document.getElementById("modalCoins").innerText = `Coins Earned: ${coins}💰`;
             document.getElementById("totalCoinsDisplay").innerText = totalCoins;
             
-            if (currentLevel === 5) {
-                showFinalCompletion();
-            } else {
-                document.getElementById("levelCompleteModal").style.display = "flex";
-            }
+            // Show confetti for every level completion
+            showConfetti();
             
             // Play win sound
             winSound.play();
-            showConfetti();
+            
+            // Save the updated game state (level will be incremented later)
+            saveGameState();
+            
+            if (currentLevel === 5) {
+                // Show final level modal with name input
+                document.getElementById("finalLevelModal").style.display = "flex";
+            } else {
+                document.getElementById("levelCompleteModal").style.display = "flex";
+            }
         }
 
-        function showFinalCompletion() {
-            document.getElementById("levelCompleteTitle").innerText = "Congratulations! All Levels Complete! 🎉";
-            document.getElementById("nextLevelBtn").style.display = "none";
-            document.getElementById("levelCompleteModal").style.display = "flex";
+        function checkName() {
+            const name = document.getElementById("boyfriendName").value.trim();
+            if (name.toLowerCase() === "possi gee") {
+                showLoveMessage();
+            } else {
+                alert("That's not your boyfriend's name. Try again!");
+            }
+        }
+
+        function showLoveMessage() {
+            const loveMessage = document.getElementById("loveMessage");
+            loveMessage.style.display = "block";
+            loveMessage.innerHTML = `
+                <h3>💖 My Darling 💖</h3>
+                <p>You've made it to the end of our memory game! Just like these matching pairs, we're meant to be together.</p>
+                <p>Thank you for being the most amazing girlfriend. Your love, support, and the beautiful memories we create together mean everything to me.</p>
+                <p>This game is just a small token of my love for you. I hope it brought a smile to your face, just as you bring joy to my life every day.</p>
+                <p>I love you more than words can express!</p>
+                <p>Forever Yours,<br>Possi Gee ❤️</p>
+                <button onclick="location.reload()" style="margin-top: 20px;">Back to Homepage</button>
+            `;
+            
+            // Extra celebration confetti
+            showConfetti();
+            setTimeout(showConfetti, 1500);
+            setTimeout(showConfetti, 3000);
         }
 
         function handleGameOver() {
             clearInterval(timer);
+            
+            // Update the current level display in the game over modal
+            document.getElementById("currentLevelDisplay").textContent = currentLevel;
             document.getElementById("gameOverModal").style.display = "flex";
             
             // Pause background music
             backgroundMusic.pause();
+            
+            // Save the current game state
+            saveGameState();
+        }
+
+        function restartCurrentLevel() {
+            // Close the modal
+            document.getElementById("gameOverModal").style.display = "none";
+            
+            // Restart the game with the same level and game mode
+            startGame(currentGameMode);
         }
 
         function calculateStars() {
@@ -549,13 +691,21 @@
         }
 
         function calculateCoins() {
+            // New coin reward system based on completion time
             const timeLimit = maxTimeLimits[currentLevel];
-            const baseCoins = 30;
-            const levelMultiplier = currentLevel;
+            const baseCoins = 30 * currentLevel;
             
-            if (timeElapsed <= timeLimit - 25) return baseCoins * levelMultiplier + 20;
-            if (timeElapsed <= timeLimit - 15) return baseCoins * levelMultiplier + 10;
-            return baseCoins * levelMultiplier;
+            if (timeElapsed <= 40) {
+                return baseCoins; // Full reward for quick completion
+            } else if (timeElapsed <= 50) {
+                return 20 * currentLevel; // Reduced reward
+            } else if (timeElapsed <= 60) {
+                return 10 * currentLevel; // Minimal reward
+            } else if (timeElapsed >= timeLimit - 5) {
+                return 0; // No coins if finished in last 5 seconds
+            } else {
+                return 5 * currentLevel; // Very small reward for slow completion
+            }
         }
 
         function updateScores() {
@@ -570,7 +720,10 @@
         }
 
         function useHint() {
-            if (hintsLeft <= 0) return;
+            if (hintsLeft <= 0) {
+                alert("You have no hints left! You can buy more with 30 coins.");
+                return;
+            }
             
             hintsLeft--;
             document.getElementById("hintBtn").innerText = `Hint (${hintsLeft})`;
@@ -586,6 +739,12 @@
                 }
                 cardMap.set(image, card);
             }
+            
+            // Update the progress display
+            updateProgress();
+            
+            // Save the updated game state
+            saveGameState();
         }
 
         function showHintPair(card1, card2) {
@@ -610,9 +769,32 @@
                 document.getElementById("totalCoinsDisplay").innerText = totalCoins;
                 document.getElementById("hintBtn").innerText = `Hint (${hintsLeft})`;
                 updateProgress();
+                
+                // Save the updated game state
+                saveGameState();
             } else {
                 alert("Not enough coins! Complete levels faster to earn more!");
             }
+        }
+
+        function buyHintInGame() {
+            if (totalCoins >= 30) {
+                totalCoins -= 30;
+                hintsLeft++;
+                document.getElementById("hintBtn").innerText = `Hint (${hintsLeft})`;
+                updateProgress();
+                alert("Hint purchased! You now have " + hintsLeft + " hints.");
+                
+                // Save the updated game state
+                saveGameState();
+            } else {
+                alert("Not enough coins! You need 30 coins to buy a hint.");
+            }
+        }
+
+        function updateBuyHintButtonStatus() {
+            const buyHintBtn = document.getElementById("buyHintInGameBtn");
+            buyHintBtn.disabled = totalCoins < 30;
         }
 
         function useRevealAll() {
@@ -633,18 +815,25 @@
                     }
                 });
             }, 2000);
+            
+            // Save the updated game state
+            saveGameState();
         }
 
         function updateProgress() {
             document.getElementById("progress").innerHTML = 
                 `Level: ${currentLevel} | Hints: ${hintsLeft} | Coins: ${totalCoins}💰`;
+            
+            // Update the Buy Hint button status
+            updateBuyHintButtonStatus();
         }
 
         function showConfetti() {
             confetti({
                 particleCount: 150,
                 spread: 70,
-                origin: { y: 0.6 }
+                origin: { y: 0.6 },
+                colors: ['#ff0a54', '#ff477e', '#ff7096', '#ff85a1', '#fbb1bd', '#f9bec7']
             });
         }
 
@@ -665,7 +854,9 @@
             document.getElementById("levelCompleteModal").style.display = "none";
             if (currentLevel < 5) {
                 currentLevel++;
-                startGame(isMultiplayer ? 'multi' : 'single');
+                // Save updated level
+                saveGameState();
+                startGame(currentGameMode);
             }
         });
     </script>
