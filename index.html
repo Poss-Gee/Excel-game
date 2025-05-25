@@ -1208,6 +1208,8 @@
             align-items: center;
             gap: 10px;
             transition: all 0.3s ease;
+            width: 100%;
+            margin: 8px 0;
         }
 
         .dev-button:hover {
@@ -1230,6 +1232,7 @@
             padding: 10px;
             background: #2d3748;
             border-radius: 8px;
+            margin: 8px 0;
         }
 
         .dev-close {
@@ -1240,6 +1243,7 @@
             border-radius: 8px;
             cursor: pointer;
             margin-top: 15px;
+            width: 100%;
         }
 
         #debugLogs {
@@ -1633,7 +1637,7 @@
                     <div class="achievement-icon-container">👑</div>
                     <div class="achievement-info">
                         <div class="achievement-name">Memory Master</div>
-                        <div class="achievement-description">Complete all 10 levels</div>
+                        <div class="achievement-description">Complete all 12 levels</div>
                         <div class="achievement-progress">
                             <div class="progress-bar" id="masterProgress"></div>
                         </div>
@@ -2023,7 +2027,9 @@
             7: 125, // 7x6
             8: 135, // 7x7
             9: 145, // 8x7
-            10: 160 // 8x8
+            10: 160, // 8x8
+            11: 175, // 9x8
+            12: 190  // 9x9
         };
 
         // Audio elements
@@ -2136,6 +2142,12 @@
                     break;
                 case 10:
                     gridRows = 8; gridCols = 8;
+                    break;
+                case 11:
+                    gridRows = 9; gridCols = 8;
+                    break;
+                case 12:
+                    gridRows = 9; gridCols = 9;
                     break;
             }
             
@@ -2311,33 +2323,20 @@
         function handleLevelComplete() {
             checkAchievements();
             
-            if (isDailyChallenge) {
-                const today = new Date();
-                const seed = today.getFullYear() * 10000 + (today.getMonth() + 1) * 100 + today.getDate();
-                const challengeType = seed % 3;
-                
-                let success = false;
-                switch(challengeType) {
-                    case 0:
-                        success = mistakesMade === 0;
-                        break;
-                    case 1:
-                        success = timeElapsed < 45;
-                        break;
-                    case 2:
-                        success = powerUps.freeze === 2 && powerUps.chance === 2 && powerUps.peek === 2;
-                        break;
-                }
-                
-                handleDailyChallengeComplete(success);
-            }
-            
             clearInterval(timer);
             document.getElementById("timer").classList.remove("blink");
             
             const stars = calculateStars();
             const coins = calculateCoins();
             totalCoins += coins;
+            
+            // Update profile statistics
+            userProfile.totalGames++;
+            if (!userProfile.bestTime || timeElapsed < userProfile.bestTime) {
+                userProfile.bestTime = timeElapsed;
+            }
+            userProfile.totalStars += stars.split('★').length - 1;
+            localStorage.setItem('userProfile', JSON.stringify(userProfile));
             
             document.getElementById("modalStars").innerHTML = stars;
             document.getElementById("modalCoins").innerText = `Coins Earned: ${coins}💰`;
@@ -2349,18 +2348,17 @@
             // Play win sound
             winSound.play();
             
-            // Save the updated game state (level will be incremented later)
+            // Save the updated game state
             saveGameState();
             
-            if (currentLevel === 5) {
-                // Show final level modal with name input
+            if (currentLevel === 12) {
                 document.getElementById("finalLevelModal").style.display = "flex";
             } else {
                 document.getElementById("levelCompleteModal").style.display = "flex";
             }
             
             // Update level progress
-            if (currentLevel === unlockedLevels && currentLevel < 10) {
+            if (currentLevel === unlockedLevels && currentLevel < 12) {
                 unlockedLevels++;
                 localStorage.setItem('unlockedLevels', unlockedLevels);
             }
@@ -2368,6 +2366,9 @@
             // Save stars for the level
             levelStars[currentLevel] = stars;
             localStorage.setItem('levelStars', JSON.stringify(levelStars));
+            
+            // Update profile display
+            updateProfileStats();
         }
 
         function checkName() {
@@ -2401,6 +2402,10 @@
         function handleGameOver() {
             clearInterval(timer);
             
+            // Update profile statistics
+            userProfile.totalGames++;
+            localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            
             // Update the current level display in the game over modal
             document.getElementById("currentLevelDisplay").textContent = currentLevel;
             document.getElementById("gameOverModal").style.display = "flex";
@@ -2410,6 +2415,9 @@
             
             // Save the current game state
             saveGameState();
+            
+            // Update profile display
+            updateProfileStats();
         }
 
         function restartCurrentLevel() {
@@ -2684,7 +2692,7 @@
             }
             
             // Memory Master achievement
-            if (!achievements.master && currentLevel === 10) {
+            if (!achievements.master && currentLevel === 12) {
                 unlockAchievement('master', 'Memory Master');
             }
         }
@@ -2813,15 +2821,24 @@
 
         function showLevelSelect(mode) {
             selectedGameMode = mode;
-            document.getElementById('menu').style.display = 'none';
+            
+            // Hide all sections first
+            document.querySelectorAll('.section').forEach(section => {
+                section.style.display = 'none';
+            });
+            
+            // Show level select section
             document.getElementById('levelSelect').style.display = 'block';
             
             const levelGrid = document.getElementById('levelGrid');
             levelGrid.innerHTML = '';
             
-            for (let i = 1; i <= 10; i++) {
+            // Updated to show 12 levels instead of 10
+            for (let i = 1; i <= 12; i++) {
                 const levelCard = document.createElement('div');
                 levelCard.className = `level-card ${i > unlockedLevels ? 'locked' : ''}`;
+                levelCard.style.animation = `fadeIn 0.3s ease forwards ${i * 0.1}s`;
+                levelCard.style.opacity = '0';
                 
                 const gridSize = getLevelGridSize(i);
                 const stars = levelStars[i] || '';
@@ -2851,7 +2868,9 @@
                 7: {rows: 7, cols: 6},
                 8: {rows: 7, cols: 7},
                 9: {rows: 8, cols: 7},
-                10: {rows: 8, cols: 8}
+                10: {rows: 8, cols: 8},
+                11: {rows: 9, cols: 8},
+                12: {rows: 9, cols: 9}
             };
             return sizes[level];
         }
@@ -3058,7 +3077,7 @@
             levelGrid.innerHTML = '';
             
             // Add a nice animation to the level cards as they appear
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= 12; i++) {
                 const levelCard = document.createElement('div');
                 levelCard.className = `level-card ${i > unlockedLevels ? 'locked' : ''}`;
                 levelCard.style.animation = `fadeIn 0.3s ease forwards ${i * 0.1}s`;
@@ -3170,7 +3189,7 @@
         let achievementProgress = {
             speed: 0,      // Best time in seconds
             perfect: 0,    // Perfect games count
-            master: 1,     // Current level
+            master: 1,     // Current level (out of 12)
             streak: 0,     // Current streak
             collector: 0   // 3-star levels count
         };
@@ -3182,7 +3201,7 @@
             document.getElementById('perfectProgress').style.width = 
                 `${(achievementProgress.perfect / 3) * 100}%`;
             document.getElementById('masterProgress').style.width = 
-                `${(achievementProgress.master / 10) * 100}%`;
+                `${(achievementProgress.master / 12) * 100}%`;  // Changed from 10 to 12
             document.getElementById('streakProgress').style.width = 
                 `${(achievementProgress.streak / 7) * 100}%`;
             document.getElementById('collectorProgress').style.width = 
@@ -3196,7 +3215,7 @@
                 if (card.id === 'achievement-perfect' && achievementProgress.perfect >= 3) {
                     card.classList.add('unlocked');
                 }
-                if (card.id === 'achievement-master' && achievementProgress.master >= 10) {
+                if (card.id === 'achievement-master' && achievementProgress.master >= 12) {  // Changed from 10 to 12
                     card.classList.add('unlocked');
                 }
                 if (card.id === 'achievement-streak' && achievementProgress.streak >= 7) {
@@ -3529,11 +3548,11 @@
         }
 
         function unlockAllLevels() {
-            unlockedLevels = 10;
+            unlockedLevels = 12;
             localStorage.setItem('unlockedLevels', unlockedLevels);
             
             // Add 3 stars to all levels
-            for (let i = 1; i <= 10; i++) {
+            for (let i = 1; i <= 12; i++) {
                 levelStars[i] = '★★★';
             }
             localStorage.setItem('levelStars', JSON.stringify(levelStars));
@@ -3598,32 +3617,72 @@
         // Developer mode variables
         let tapCount = 0;
         let lastTapTime = 0;
-        let isDeveloperMode = localStorage.getItem('devMode') === 'true';
+        let isDeveloperMode = false;
 
-        // Add tap detection to header
+        // Add tap detection to header with visual feedback
         document.querySelector('.header').addEventListener('click', (e) => {
             const currentTime = new Date().getTime();
             const tapGap = currentTime - lastTapTime;
             
             if (tapGap < 500) { // Detect taps within 500ms
                 tapCount++;
+                
+                // Add visual feedback
+                const header = document.querySelector('.header');
+                header.style.backgroundColor = `rgba(${45 + (tapCount * 10)}, 55, 72, 1)`;
+                
                 if (tapCount === 5) {
                     toggleDeveloperMode();
                     tapCount = 0;
+                    header.style.backgroundColor = '#2d3748'; // Reset color
                 }
             } else {
                 tapCount = 1;
             }
             lastTapTime = currentTime;
+            
+            // Show tap count feedback
+            if (tapCount > 0) {
+                showTapFeedback(tapCount);
+            }
         });
+
+        function showTapFeedback(count) {
+            let feedback = document.getElementById('tapFeedback');
+            if (!feedback) {
+                feedback = document.createElement('div');
+                feedback.id = 'tapFeedback';
+                feedback.style.position = 'fixed';
+                feedback.style.top = '70px';
+                feedback.style.left = '50%';
+                feedback.style.transform = 'translateX(-50%)';
+                feedback.style.background = '#daff0a';
+                feedback.style.color = '#1a202c';
+                feedback.style.padding = '5px 10px';
+                feedback.style.borderRadius = '10px';
+                feedback.style.fontSize = '12px';
+                feedback.style.zIndex = '1000';
+                document.body.appendChild(feedback);
+            }
+            
+            feedback.textContent = `${5 - count} more taps for developer mode`;
+            feedback.style.opacity = '1';
+            
+            setTimeout(() => {
+                feedback.style.opacity = '0';
+            }, 1000);
+        }
 
         function toggleDeveloperMode() {
             isDeveloperMode = !isDeveloperMode;
             localStorage.setItem('devMode', isDeveloperMode);
+            
             if (isDeveloperMode) {
                 showDeveloperPanel();
+                showToast('🛠️ Developer Mode Activated!');
             } else {
                 document.getElementById('developerModal').style.display = 'none';
+                showToast('Developer Mode Deactivated');
             }
         }
 
@@ -3648,7 +3707,7 @@
     </div>
 
     <!-- Developer Mode Modal -->
-    <div id="developerModal" class="modal" style="display: none;">
+    <div id="developerModal" class="modal">
         <div class="modal-content">
             <h2 style="color: #ff0000;">🛠️ Developer Mode</h2>
             <div class="developer-tools">
@@ -3724,7 +3783,8 @@
             avatarSeed: 'default',
             totalGames: 0,
             bestTime: null,
-            totalStars: 0
+            totalStars: 0,
+            lastUpdated: new Date().toISOString()
         };
 
         function loadProfile() {
@@ -3764,24 +3824,45 @@
             }
             
             userProfile.name = name;
+            userProfile.lastUpdated = new Date().toISOString();
             localStorage.setItem('userProfile', JSON.stringify(userProfile));
             updateProfileDisplay();
             document.getElementById('profileModal').style.display = 'none';
             
-            showToast(`Welcome, ${userProfile.name}! 👋`);
+            showToast(`Profile saved, ${userProfile.name}! 👋`);
         }
 
         function updateProfileDisplay() {
             const avatarUrl = `https://api.dicebear.com/6.x/fun-emoji/svg?seed=${userProfile.avatarSeed}`;
             document.getElementById('selectedAvatar').querySelector('img').src = avatarUrl;
             document.getElementById('profileTrigger').querySelector('img').src = avatarUrl;
+            
+            // Update name input if it exists
+            const nameInput = document.getElementById('profileName');
+            if (nameInput) {
+                nameInput.value = userProfile.name || '';
+            }
+            
             updateProfileStats();
         }
 
         function updateProfileStats() {
-            document.getElementById('totalGames').textContent = userProfile.totalGames;
+            // Update display in profile modal
+            document.getElementById('totalGames').textContent = userProfile.totalGames || 0;
             document.getElementById('bestTime').textContent = userProfile.bestTime ? `${userProfile.bestTime}s` : '--';
-            document.getElementById('totalStars').textContent = userProfile.totalStars;
+            document.getElementById('totalStars').textContent = userProfile.totalStars || 0;
+            
+            // Calculate total stars from level stars
+            let totalStarsFromLevels = 0;
+            Object.values(levelStars).forEach(stars => {
+                totalStarsFromLevels += (stars.match(/★/g) || []).length;
+            });
+            
+            // Update total stars if there's a discrepancy
+            if (totalStarsFromLevels !== userProfile.totalStars) {
+                userProfile.totalStars = totalStarsFromLevels;
+                localStorage.setItem('userProfile', JSON.stringify(userProfile));
+            }
         }
 
         // Initialize profile system
