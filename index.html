@@ -5,6 +5,152 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Memory Game for My Love ❤️</title>
     <style>
+        /* Theme Variables */
+        :root {
+            /* Default Theme (Dark) */
+            --bg-primary: #1a202c;
+            --bg-secondary: #2d3748;
+            --bg-card: #4a5568;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --accent-color: #daff0a;
+            --card-border: none;
+            --card-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Light Theme */
+        [data-theme="light"] {
+            --bg-primary: #f7fafc;
+            --bg-secondary: #edf2f7;
+            --bg-card: #ffffff;
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --accent-color: #3182ce;
+            --card-border: 1px solid #e2e8f0;
+            --card-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Neon Theme */
+        [data-theme="neon"] {
+            --bg-primary: #000000;
+            --bg-secondary: #1a1a1a;
+            --bg-card: #2d2d2d;
+            --text-primary: #00ff00;
+            --text-secondary: #00ffaa;
+            --accent-color: #ff00ff;
+            --card-border: 1px solid #00ff00;
+            --card-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        /* Base styles with theme variables */
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .header {
+            background-color: var(--bg-secondary);
+            border-bottom: var(--card-border);
+        }
+
+        .card {
+            background-color: var(--bg-card);
+            border: var(--card-border);
+            box-shadow: var(--card-shadow);
+        }
+
+        .settings-section {
+            background-color: var(--bg-secondary);
+            border: var(--card-border);
+            box-shadow: var(--card-shadow);
+        }
+
+        .setting-item {
+            background-color: var(--bg-card);
+            border: var(--card-border);
+        }
+
+        .settings-title {
+            color: var(--accent-color);
+        }
+
+        .settings-select {
+            background-color: var(--bg-card);
+            color: var(--text-primary);
+            border: 2px solid var(--accent-color);
+        }
+
+        .settings-select option {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .button {
+            background-color: var(--accent-color);
+            color: var(--bg-primary);
+        }
+
+        .modal-content {
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            border: var(--card-border);
+            box-shadow: var(--card-shadow);
+        }
+
+        .achievement-card {
+            background-color: var(--bg-card);
+            border: var(--card-border);
+            box-shadow: var(--card-shadow);
+        }
+
+        .progress-bar {
+            background-color: var(--accent-color);
+        }
+
+        /* Additional theme-specific styles */
+        [data-theme="neon"] .card {
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.2);
+        }
+
+        [data-theme="neon"] .button:hover {
+            box-shadow: 0 0 10px var(--accent-color);
+        }
+
+        [data-theme="light"] .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Theme Selector Styles */
+        .theme-preview {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            margin-right: 10px;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-preview.default {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+        }
+
+        .theme-preview.light {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-color: #cbd5e0;
+        }
+
+        .theme-preview.neon {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 5px #00ff00;
+        }
+
+        .theme-preview.active {
+            transform: scale(1.2);
+            border-color: var(--accent-color);
+        }
+
         body {
             display: flex;
             flex-direction: column;
@@ -1415,6 +1561,301 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Audio Settings Styles */
+        .settings-section {
+            background: rgba(45, 55, 72, 0.9);
+            border-radius: 15px;
+            padding: 15px;
+            margin: 10px 0;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .settings-title {
+            color: #daff0a;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+
+        .settings-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .setting-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: rgba(74, 85, 104, 0.3);
+            border-radius: 10px;
+            min-height: 50px;
+        }
+
+        .setting-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .setting-icon {
+            font-size: 1.2rem;
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Toggle Switch Styles */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 26px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #4a5568;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #daff0a;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 480px) {
+            .settings-section {
+                padding: 12px;
+                margin: 8px 0;
+            }
+
+            .settings-title {
+                font-size: 1.1rem;
+                margin-bottom: 12px;
+            }
+
+            .setting-item {
+                padding: 6px 8px;
+                min-height: 45px;
+            }
+
+            .setting-label {
+                font-size: 0.9rem;
+                gap: 8px;
+            }
+
+            .setting-icon {
+                font-size: 1.1rem;
+                width: 20px;
+            }
+
+            .toggle-switch {
+                width: 46px;
+                height: 24px;
+            }
+
+            .toggle-slider:before {
+                height: 18px;
+                width: 18px;
+            }
+
+            input:checked + .toggle-slider:before {
+                transform: translateX(22px);
+            }
+        }
+
+        @media (max-width: 360px) {
+            .settings-section {
+                padding: 10px;
+                margin: 6px 0;
+            }
+
+            .settings-title {
+                font-size: 1rem;
+                margin-bottom: 10px;
+            }
+
+            .setting-item {
+                padding: 5px 6px;
+                min-height: 40px;
+            }
+
+            .setting-label {
+                font-size: 0.85rem;
+                gap: 6px;
+            }
+
+            .setting-icon {
+                font-size: 1rem;
+                width: 18px;
+            }
+
+            .toggle-switch {
+                width: 42px;
+                height: 22px;
+            }
+
+            .toggle-slider:before {
+                height: 16px;
+                width: 16px;
+            }
+
+            input:checked + .toggle-slider:before {
+                transform: translateX(20px);
+            }
+        }
+
+        /* Theme Options Styles */
+        .theme-options {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .theme-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 20px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .theme-btn.active {
+            background: var(--accent-color);
+            color: var(--bg-primary);
+        }
+
+        .theme-preview {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid var(--text-secondary);
+        }
+
+        .theme-btn.default .theme-preview {
+            background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+            border-color: #daff0a;
+        }
+
+        .theme-btn.light .theme-preview {
+            background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+            border-color: #3182ce;
+        }
+
+        .theme-btn.neon .theme-preview {
+            background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+            border-color: #00ff00;
+            box-shadow: 0 0 5px #00ff00;
+        }
+
+        /* Responsive Styles */
+        @media (max-width: 480px) {
+            .theme-options {
+                flex-wrap: wrap;
+                justify-content: flex-end;
+            }
+
+            .theme-btn {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+            }
+
+            .theme-preview {
+                width: 16px;
+                height: 16px;
+            }
+        }
+
+        @media (max-width: 360px) {
+            .theme-btn {
+                padding: 5px 8px;
+                font-size: 0.85rem;
+            }
+
+            .theme-preview {
+                width: 14px;
+                height: 14px;
+            }
+        }
+
+        /* Settings Select Styles */
+        .settings-select {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 2px solid var(--accent-color);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .settings-select:hover {
+            background: var(--bg-secondary);
+        }
+
+        .settings-select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--accent-color);
+        }
+
+        .settings-select option {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 8px;
+        }
+
+        @media (max-width: 480px) {
+            .settings-select {
+                padding: 6px 10px;
+                font-size: 0.9rem;
+                min-width: 100px;
+            }
+        }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
@@ -1430,7 +1871,7 @@
         <!-- Dashboard Section -->
         <div class="section" id="dashboard">
             <div class="dashboard-header">
-                <h2>Enjoy your game! 🤗</h2>
+                <h2>Welcome Back! 👋</h2>
             </div>
             
             <div class="dashboard-stats">
@@ -1713,24 +2154,20 @@
                             <i class="fa-solid fa-music setting-icon"></i>
                             <span>Background Music</span>
                         </div>
-                        <div class="volume-control">
-                            <i class="fa-solid fa-volume-low"></i>
-                            <input type="range" class="volume-slider" min="0" max="100" value="50" 
-                                   onchange="adjustVolume('music', this.value)">
-                            <i class="fa-solid fa-volume-high"></i>
-                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="bgmToggle" checked onchange="toggleBGM(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                     <div class="setting-item">
                         <div class="setting-label">
                             <i class="fa-solid fa-volume-high setting-icon"></i>
                             <span>Sound Effects</span>
                         </div>
-                        <div class="volume-control">
-                            <i class="fa-solid fa-volume-low"></i>
-                            <input type="range" class="volume-slider" min="0" max="100" value="70"
-                                   onchange="adjustVolume('sfx', this.value)">
-                            <i class="fa-solid fa-volume-high"></i>
-                        </div>
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="sfxToggle" checked onchange="toggleSFX(this.checked)">
+                            <span class="toggle-slider"></span>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -1743,25 +2180,332 @@
                             <i class="fa-solid fa-palette setting-icon"></i>
                             <span>Theme</span>
                         </div>
-                        <select class="difficulty-select" onchange="changeTheme(this.value)">
+                        <select class="settings-select" onchange="changeTheme(this.value)">
                             <option value="default">Default</option>
-                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
                             <option value="neon">Neon</option>
-                            <option value="pastel">Pastel</option>
                         </select>
-                    </div>
-                    <div class="setting-item">
-                        <div class="setting-label">
-                            <i class="fa-solid fa-wand-magic-sparkles setting-icon"></i>
-                            <span>Visual Effects</span>
-                        </div>
-                        <label class="toggle-switch">
-                            <input type="checkbox" checked onchange="toggleEffects(this.checked)">
-                            <span class="toggle-slider"></span>
-                        </label>
                     </div>
                 </div>
             </div>
+
+            <style>
+                /* Settings Select Styles */
+                .settings-select {
+                    padding: 8px 12px;
+                    border-radius: 20px;
+                    border: 2px solid var(--accent-color);
+                    background: var(--bg-card);
+                    color: var(--text-primary);
+                    cursor: pointer;
+                    font-size: 1rem;
+                    transition: all 0.3s ease;
+                    min-width: 120px;
+                }
+
+                .settings-select:hover {
+                    background: var(--bg-secondary);
+                }
+
+                .settings-select:focus {
+                    outline: none;
+                    box-shadow: 0 0 0 2px var(--accent-color);
+                }
+
+                .settings-select option {
+                    background: var(--bg-primary);
+                    color: var(--text-primary);
+                    padding: 8px;
+                }
+
+                @media (max-width: 480px) {
+                    .settings-select {
+                        padding: 6px 10px;
+                        font-size: 0.9rem;
+                        min-width: 100px;
+                    }
+                }
+            </style>
+
+            <script>
+                // Theme Management
+                function changeTheme(theme) {
+                    // Set theme variables
+                    const themes = {
+                        default: {
+                            '--bg-primary': '#1a1a2e',      // Darker blue-black
+                            '--bg-secondary': '#16213e',    // Dark navy
+                            '--bg-card': '#0f3460',         // Deep blue
+                            '--text-primary': '#e2e8f0',    // Light gray
+                            '--text-secondary': '#a0aec0',  // Medium gray
+                            '--accent-color': '#daff0a',    // Lime
+                            '--card-border': 'none',
+                            '--card-shadow': '0 4px 6px rgba(0, 0, 0, 0.3)'
+                        },
+                        light: {
+                            '--bg-primary': '#ffffff',      // Pure white
+                            '--bg-secondary': '#f8fafc',    // Very light gray
+                            '--bg-card': '#f1f5f9',         // Light gray
+                            '--text-primary': '#1e293b',    // Dark blue-gray
+                            '--text-secondary': '#475569',  // Medium blue-gray
+                            '--accent-color': '#3b82f6',    // Bright blue
+                            '--card-border': '1px solid #e2e8f0',
+                            '--card-shadow': '0 2px 4px rgba(0, 0, 0, 0.05)'
+                        },
+                        neon: {
+                            '--bg-primary': '#000000',      // Pure black
+                            '--bg-secondary': '#0a0a0a',    // Almost black
+                            '--bg-card': '#1a1a1a',         // Very dark gray
+                            '--text-primary': '#00ff00',    // Bright green
+                            '--text-secondary': '#00cc00',  // Slightly darker green
+                            '--accent-color': '#ff00ff',    // Magenta
+                            '--card-border': '1px solid #00ff00',
+                            '--card-shadow': '0 0 10px rgba(0, 255, 0, 0.3)'
+                        }
+                    };
+
+                    // Apply theme colors
+                    const root = document.documentElement;
+                    const themeColors = themes[theme];
+                    Object.keys(themeColors).forEach(property => {
+                        root.style.setProperty(property, themeColors[property]);
+                    });
+
+                    // Save theme preference
+                    localStorage.setItem('theme', theme);
+                    
+                    // Show feedback
+                    showToast(`${theme.charAt(0).toUpperCase() + theme.slice(1)} theme applied`);
+                }
+
+                // Initialize theme
+                window.addEventListener('DOMContentLoaded', () => {
+                    const savedTheme = localStorage.getItem('theme') || 'default';
+                    // Set the select value
+                    document.querySelector('.settings-select').value = savedTheme;
+                    // Apply the theme
+                    changeTheme(savedTheme);
+                });
+            </script>
+
+            <div class="settings-section">
+                <div class="settings-title">Developer Settings</div>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <div class="setting-label">
+                            <i class="fa-solid fa-code setting-icon"></i>
+                            <span>Developer Mode</span>
+                        </div>
+                        <button id="devModeBtn" class="dev-mode-btn" onclick="devTools.toggle()">
+                            Enable
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <style>
+                /* Theme Options Styles */
+                .theme-options {
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                }
+
+                .theme-btn {
+                    display: flex;
+                    align-items: center;
+                    gap: 8px;
+                    padding: 8px 12px;
+                    border: none;
+                    border-radius: 20px;
+                    background: var(--bg-card);
+                    color: var(--text-primary);
+                    cursor: pointer;
+                    transition: all 0.3s ease;
+                }
+
+                .theme-btn:hover {
+                    transform: translateY(-2px);
+                }
+
+                .theme-btn.active {
+                    background: var(--accent-color);
+                    color: var(--bg-primary);
+                }
+
+                .theme-preview {
+                    width: 20px;
+                    height: 20px;
+                    border-radius: 50%;
+                    border: 2px solid var(--text-secondary);
+                }
+
+                .theme-btn.default .theme-preview {
+                    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
+                    border-color: #daff0a;
+                }
+
+                .theme-btn.light .theme-preview {
+                    background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+                    border-color: #3182ce;
+                }
+
+                .theme-btn.neon .theme-preview {
+                    background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+                    border-color: #00ff00;
+                    box-shadow: 0 0 5px #00ff00;
+                }
+
+                /* Responsive Styles */
+                @media (max-width: 480px) {
+                    .theme-options {
+                        flex-wrap: wrap;
+                        justify-content: flex-end;
+                    }
+
+                    .theme-btn {
+                        padding: 6px 10px;
+                        font-size: 0.9rem;
+                    }
+
+                    .theme-preview {
+                        width: 16px;
+                        height: 16px;
+                    }
+                }
+
+                @media (max-width: 360px) {
+                    .theme-btn {
+                        padding: 5px 8px;
+                        font-size: 0.85rem;
+                    }
+
+                    .theme-preview {
+                        width: 14px;
+                        height: 14px;
+                    }
+                }
+            </style>
+
+            <script>
+                // Developer Tools Implementation
+                const devTools = {
+                    isEnabled: false,
+                    password: "Possigee.1",
+
+                    init() {
+                        this.isEnabled = localStorage.getItem('devMode') === 'true';
+                        const btn = document.getElementById('devModeBtn');
+                        if (btn && this.isEnabled) {
+                            btn.textContent = 'Disable';
+                        }
+                        if (this.isEnabled) {
+                            this.showPanel();
+                        }
+                    },
+
+                    toggle() {
+                        const btn = document.getElementById('devModeBtn');
+                        if (this.isEnabled) {
+                            this.isEnabled = false;
+                            localStorage.setItem('devMode', 'false');
+                            btn.textContent = 'Enable';
+                            showToast('Developer Mode Deactivated');
+                            document.getElementById('developerModal').style.display = 'none';
+                        } else {
+                            const password = prompt("Enter developer password:");
+                            if (password === this.password) {
+                                this.isEnabled = true;
+                                localStorage.setItem('devMode', 'true');
+                                btn.textContent = 'Disable';
+                                showToast('🛠️ Developer Mode Activated!');
+                                this.showPanel();
+                            } else if (password !== null) {
+                                showToast('Incorrect password!');
+                            }
+                        }
+                    },
+
+                    showPanel() {
+                        if (!this.isEnabled) return;
+                        const modal = document.getElementById('developerModal');
+                        if (modal) {
+                            modal.style.display = 'flex';
+                        }
+                    },
+
+                    addCoins(amount) {
+                        totalCoins += amount;
+                        localStorage.setItem('totalCoins', totalCoins);
+                        updateProgress();
+                        showToast(`Added ${amount} coins!`);
+                    },
+
+                    unlockAllLevels() {
+                        unlockedLevels = 12;
+                        localStorage.setItem('unlockedLevels', unlockedLevels);
+                        for (let i = 1; i <= 12; i++) {
+                            levelStars[i] = '★★★';
+                        }
+                        localStorage.setItem('levelStars', JSON.stringify(levelStars));
+                        showToast('All levels unlocked with 3 stars!');
+                    },
+
+                    unlockAllAchievements() {
+                        // Set all achievements to true
+                        achievements = {
+                            speed: true,    // Complete a level in under 30 seconds
+                            perfect: true,  // Complete a level without mistakes
+                            master: true,   // Complete all levels
+                            streak: true    // Maintain a 7-day streak
+                        };
+                        
+                        // Update achievement progress
+                        achievementProgress = {
+                            speed: 25,      // Best time in seconds
+                            perfect: 5,     // Perfect games count
+                            master: 12,     // Current level (out of 12)
+                            streak: 7       // Current daily streak
+                        };
+                        
+                        // Save to localStorage
+                        localStorage.setItem('achievements', JSON.stringify(achievements));
+                        localStorage.setItem('achievementProgress', JSON.stringify(achievementProgress));
+                        
+                        // Update UI
+                        updateAchievementProgress();
+                        updateAchievementCards();
+                        
+                        // Add coins reward for achievements
+                        totalCoins += 400; // 100 coins per achievement
+                        localStorage.setItem('totalCoins', totalCoins);
+                        updateCoins();
+                        
+                        showToast('All achievements unlocked! +400 coins');
+                    },
+
+                    resetAllProgress() {
+                        if (confirm('Are you sure you want to reset ALL progress? This cannot be undone!')) {
+                            localStorage.clear();
+                            showToast('All progress reset! Reloading...');
+                            setTimeout(() => location.reload(), 1500);
+                        }
+                    }
+                };
+
+                // Initialize developer mode
+                window.addEventListener('DOMContentLoaded', () => {
+                    devTools.init();
+                });
+
+                // Check developer mode state on load
+                window.addEventListener('DOMContentLoaded', () => {
+                    const btn = document.getElementById('devModeBtn');
+                    if (localStorage.getItem('devMode') === 'true') {
+                        btn.textContent = 'Disable';
+                    }
+                });
+            </script>
         </div>
     </div>
 
@@ -3614,77 +4358,40 @@
             logsDiv.scrollTop = logsDiv.scrollHeight;
         }
 
-        // Developer mode variables
-        let tapCount = 0;
-        let lastTapTime = 0;
-        let isDeveloperMode = false;
+        // Developer mode variables - REMOVED (now using devTools object)
+        // let tapCount = 0;
+        // let lastTapTime = 0;
+        // let isDeveloperMode = false;
 
         // Add tap detection to header with visual feedback
-        document.querySelector('.header').addEventListener('click', (e) => {
+        /*document.querySelector('.header').addEventListener('click', (e) => {
             const currentTime = new Date().getTime();
             const tapGap = currentTime - lastTapTime;
             
-            if (tapGap < 500) { // Detect taps within 500ms
+            if (tapGap < 500) {
                 tapCount++;
                 
-                // Add visual feedback
                 const header = document.querySelector('.header');
                 header.style.backgroundColor = `rgba(${45 + (tapCount * 10)}, 55, 72, 1)`;
                 
                 if (tapCount === 5) {
                     toggleDeveloperMode();
                     tapCount = 0;
-                    header.style.backgroundColor = '#2d3748'; // Reset color
+                    header.style.backgroundColor = '#2d3748';
                 }
             } else {
                 tapCount = 1;
             }
             lastTapTime = currentTime;
             
-            // Show tap count feedback
             if (tapCount > 0) {
                 showTapFeedback(tapCount);
             }
-        });
+        });*/
 
-        function showTapFeedback(count) {
-            let feedback = document.getElementById('tapFeedback');
-            if (!feedback) {
-                feedback = document.createElement('div');
-                feedback.id = 'tapFeedback';
-                feedback.style.position = 'fixed';
-                feedback.style.top = '70px';
-                feedback.style.left = '50%';
-                feedback.style.transform = 'translateX(-50%)';
-                feedback.style.background = '#daff0a';
-                feedback.style.color = '#1a202c';
-                feedback.style.padding = '5px 10px';
-                feedback.style.borderRadius = '10px';
-                feedback.style.fontSize = '12px';
-                feedback.style.zIndex = '1000';
-                document.body.appendChild(feedback);
-            }
-            
-            feedback.textContent = `${5 - count} more taps for developer mode`;
-            feedback.style.opacity = '1';
-            
-            setTimeout(() => {
-                feedback.style.opacity = '0';
-            }, 1000);
-        }
-
-        function toggleDeveloperMode() {
-            isDeveloperMode = !isDeveloperMode;
-            localStorage.setItem('devMode', isDeveloperMode);
-            
-            if (isDeveloperMode) {
-                showDeveloperPanel();
-                showToast('🛠️ Developer Mode Activated!');
-            } else {
-                document.getElementById('developerModal').style.display = 'none';
-                showToast('Developer Mode Deactivated');
-            }
-        }
+        // Developer mode variables - REMOVED (now using devTools object)
+        // let isDeveloperMode = false;
+        // const DEVELOPER_PASSWORD = "Possigee.1";
 
         // Add achievement tracking
     </script>
@@ -3711,25 +4418,18 @@
         <div class="modal-content">
             <h2 style="color: #ff0000;">🛠️ Developer Mode</h2>
             <div class="developer-tools">
-                <button onclick="addCoins(999)" class="dev-button">
-                    <i class="fa-solid fa-coins"></i> Add 999 Coins
+                <button onclick="devTools.addCoins(9999999)" class="dev-button">
+                    <i class="fa-solid fa-coins"></i> Add 9,999,999 Coins
                 </button>
-                <button onclick="unlockAllLevels()" class="dev-button">
+                <button onclick="devTools.unlockAllLevels()" class="dev-button">
                     <i class="fa-solid fa-unlock"></i> Unlock All Levels
                 </button>
-                <button onclick="unlockAllAchievements()" class="dev-button">
+                <button onclick="devTools.unlockAllAchievements()" class="dev-button">
                     <i class="fa-solid fa-trophy"></i> Unlock All Achievements
                 </button>
-                <button onclick="resetAllProgress()" class="dev-button danger">
+                <button onclick="devTools.resetAllProgress()" class="dev-button danger">
                     <i class="fa-solid fa-trash"></i> Reset All Progress
                 </button>
-                <div class="dev-toggle">
-                    <label class="toggle-switch">
-                        <input type="checkbox" onchange="toggleDebugLogs(this.checked)">
-                        <span class="toggle-slider"></span>
-                    </label>
-                    <span>Show Debug Logs</span>
-                </div>
             </div>
             <button onclick="document.getElementById('developerModal').style.display='none'" class="dev-close">
                 Close
@@ -3876,6 +4576,12 @@
                     profileModal.style.display = 'none';
                 }
             });
+
+            // Check developer mode state
+            if (localStorage.getItem('devMode') === 'true') {
+                isDeveloperMode = true;
+                document.querySelector('.dev-mode-btn').textContent = 'Disable';
+            }
         });
 
         function updateGameStats(gameTime, starsEarned) {
@@ -3957,6 +4663,67 @@
             }
         `;
         document.head.appendChild(profileStyles);
+
+        // Developer mode variables - REMOVED (now using devTools object)
+        // let isDeveloperMode = false;
+        // const DEVELOPER_PASSWORD = "Possigee.1";
+
+        // Add achievement tracking
     </script>
+
+    <!-- Audio Settings Functions -->
+    function toggleBGM(enabled) {
+        localStorage.setItem('bgmEnabled', enabled);
+        if (enabled) {
+            if (bgMusic && !bgMusic.playing()) {
+                bgMusic.play();
+            }
+            showToast('Background Music Enabled');
+        } else {
+            if (bgMusic && bgMusic.playing()) {
+                bgMusic.pause();
+            }
+            showToast('Background Music Disabled');
+        }
+    }
+
+    function toggleSFX(enabled) {
+        localStorage.setItem('sfxEnabled', enabled);
+        sfxEnabled = enabled;
+        showToast(`Sound Effects ${enabled ? 'Enabled' : 'Disabled'}`);
+    }
+
+    // Initialize audio settings on page load
+    window.addEventListener('DOMContentLoaded', () => {
+        const bgmEnabled = localStorage.getItem('bgmEnabled') !== 'false';
+        const sfxEnabled = localStorage.getItem('sfxEnabled') !== 'false';
+        
+        document.getElementById('bgmToggle').checked = bgmEnabled;
+        document.getElementById('sfxToggle').checked = sfxEnabled;
+        
+        if (!bgmEnabled && bgMusic && bgMusic.playing()) {
+            bgMusic.pause();
+        }
+    });
+
+    // Theme Management
+    function changeTheme(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('theme', theme);
+        
+        // Update theme preview active state
+        document.querySelectorAll('.theme-preview').forEach(preview => {
+            preview.classList.remove('active');
+        });
+        document.querySelector(`.theme-preview.${theme}`).classList.add('active');
+        
+        showToast(`${theme.charAt(0).toUpperCase() + theme.slice(1)} theme applied`);
+    }
+
+    // Initialize theme
+    window.addEventListener('DOMContentLoaded', () => {
+        const savedTheme = localStorage.getItem('theme') || 'default';
+        changeTheme(savedTheme);
+    });
 </body>
 </html>
